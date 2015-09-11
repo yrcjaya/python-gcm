@@ -4,11 +4,6 @@ from collections import defaultdict
 import time
 import random
 
-try:
-    from urllib import quote_plus
-except ImportError:
-    from urllib.parse import quote_plus
-
 
 GCM_URL = 'https://android.googleapis.com/gcm/send'
 
@@ -78,22 +73,6 @@ def group_response(response, registration_ids, key):
             grouping[v].append(k)
 
     return grouping or None
-
-
-def urlencode_utf8(params):
-    """
-    UTF-8 safe variant of urllib.urlencode.
-    http://stackoverflow.com/a/8152242
-    """
-    if hasattr(params, 'items'):
-        params = params.items()
-    params = (
-        '='.join((
-            quote_plus(k.encode('utf8'), safe='/'),
-            quote_plus(v.encode('utf8'), safe='/')
-        )) for k, v in params
-    )
-    return '&'.join(params)
 
 
 class GCM(object):
@@ -183,13 +162,15 @@ class GCM(object):
         }
         if is_json:
             headers['Content-Type'] = 'application/json'
+            params = None
 
         if not is_json:
-            data = urlencode_utf8(data)
+            params = data
+            data = None
 
         response = requests.post(
-            self.url, data=data, headers=headers,
-            proxies=self.proxy
+            self.url, data=data, params=params,
+            headers=headers, proxies=self.proxy
         )
         # Successful response
         if response.status_code == 200:
